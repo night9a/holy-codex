@@ -1,0 +1,1 @@
+Holy Codex is like an archive or a personal diary that runs on a local network and syncs automatically between your devices
