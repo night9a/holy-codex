@@ -4,6 +4,7 @@ import (
 	"holy-codex/infrastructure/config"
 	"holy-codex/infrastructure/network"
 	"holy-codex/infrastructure/storage"
+	"holy-codex/resources"
 	"holy-codex/services"
 	"holy-codex/ui/pages"
 
@@ -14,15 +15,14 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-// App is the root application struct, wiring together all subsystems.
 type App struct {
 	fyneApp fyne.App
 	window  fyne.Window
 	ctx     *Context
 }
 
-// New constructs and wires the full application.
 func New() (*App, error) {
+
 	cfg, err := config.Load()
 	if err != nil {
 		return nil, err
@@ -35,6 +35,7 @@ func New() (*App, error) {
 
 	discovery := network.NewDiscovery(cfg.NetworkPort)
 	syncer := network.NewSync(store, discovery, cfg.NetworkPort)
+
 	autoSave := services.NewAutoSave(store)
 	syncSvc := services.NewSyncService(syncer)
 	notifier := services.NewNotifier()
@@ -50,9 +51,15 @@ func New() (*App, error) {
 	}
 
 	fyneA := fyneapp.New()
+
+	// set application icon
+	if resources.ResourceLogo != nil {
+		fyneA.SetIcon(resources.ResourceLogo)
+	}
+
 	fyneA.Settings().SetTheme(&CodicTheme{})
 
-	win := fyneA.NewWindow("Holy Codex — My Diary")
+	win := fyneA.NewWindow("Holy Codex")
 	win.Resize(fyne.NewSize(960, 680))
 	win.CenterOnScreen()
 
@@ -63,22 +70,22 @@ func New() (*App, error) {
 	}, nil
 }
 
-// Run starts background services and opens the main window.
 func (a *App) Run() {
+
 	a.ctx.AutoSave.Start()
 	a.ctx.SyncService.Start()
 
 	a.window.SetContent(a.buildMain())
 	a.window.ShowAndRun()
 
-	// Cleanup on exit
 	a.ctx.AutoSave.Stop()
 	a.ctx.SyncService.Stop()
+
 	_ = a.ctx.Storage.Close()
 }
 
-// buildMain assembles the top-level navigation layout.
 func (a *App) buildMain() fyne.CanvasObject {
+
 	homePage := pages.NewHomePage(a.ctx.Storage, a.ctx.Notifier)
 	dayPage := pages.NewDayPage(a.ctx.Storage, a.ctx.AutoSave)
 	settingsPage := pages.NewSettingsPage(a.ctx.Config, a.ctx.Discovery)
@@ -88,6 +95,7 @@ func (a *App) buildMain() fyne.CanvasObject {
 		container.NewTabItemWithIcon("Write", theme.DocumentCreateIcon(), dayPage.Build()),
 		container.NewTabItemWithIcon("Scrolls", theme.SettingsIcon(), settingsPage.Build()),
 	)
+
 	tabs.SetTabLocation(container.TabLocationLeading)
 
 	header := widget.NewLabelWithStyle(
