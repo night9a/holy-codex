@@ -1,17 +1,14 @@
 package main
 
 import (
-	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/widget"
+	"log"
+	"holy-codex/app"
 )
 
 func main() {
-	a := app.New()
-	w := a.NewWindow("hello")
-
-	w.SetContent(widget.NewButton(
-		"click me",
-		func() { println("hello!")},
-	))
-	w.ShowAndRun()
+	a ,err := app.New()
+	if err != nil {
+		log.Fatalf("Failed to initilize app: %v", err)
+	}
+	a.Run()
 }
